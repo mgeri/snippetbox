@@ -1,8 +1,10 @@
-package main
+package server
 
 import (
 	"net/http"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type neuteredFileSystem struct {
@@ -34,7 +36,7 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/snippet", app.showSnippet)
 	mux.HandleFunc("/snippet/create", app.createSnippet)
 
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir(app.cfg.StaticDir)})
+	fileServer := http.FileServer(neuteredFileSystem{http.Dir(viper.GetString("server.staticDir"))})
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	return mux

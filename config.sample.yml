@@ -1,0 +1,7 @@
+logger:
+  level: "debug"
+  file: "sample.log"
+
+server:
+  address: ":8080"
+  staticDir: "./"
