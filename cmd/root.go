@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/mgeri/snippetbox/conf"
-	"github.com/mgeri/snippetbox/server"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -24,7 +23,9 @@ var logger zerolog.Logger
 var rootCmd = &cobra.Command{
 	Version: conf.Version,
 	Use:     conf.Executable,
-	Run:     run,
+	// Run: func(cmd *cobra.Command, args []string) {
+	// 	server.ListenAndServe(&logger)
+	// },
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Create Pid File
 		pidFile = viper.GetString("pidfile")
@@ -140,8 +141,4 @@ func initLog() {
 
 	logger = zerolog.New(logWriter).With().Timestamp().Logger()
 
-}
-
-func run(cmd *cobra.Command, args []string) {
-	server.ListenAndServe(&logger)
 }
