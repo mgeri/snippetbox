@@ -97,12 +97,14 @@ func initLog() {
 	// logs will write with UNIX time
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 
-	// log leverl
-	// var logLevel zerolog.Level
-	// if err := zerolog.SetGlobalLevel(viper.GetString("logger.level")); err != nil {
-	// 	zap.S().Fatalw("Could not determine logger.level", "error", err)
-	// }
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	logLevel := zerolog.DebugLevel
+	// log level
+	logLevel, err := zerolog.ParseLevel(viper.GetString("logger.level"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse log level: %s ERROR: %s\n", viper.GetString("logger.level"), err.Error())
+	}
+
+	zerolog.SetGlobalLevel(logLevel)
 
 	var logWriter io.Writer
 
