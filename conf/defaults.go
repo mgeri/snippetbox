@@ -15,6 +15,6 @@ func init() {
 
 	// Server Configuration
 	viper.SetDefault("server.address", ":4000")
-	viper.SetDefault("server.staticDir", "./")
+	viper.SetDefault("server.staticDir", "./ui/static/")
 
 }

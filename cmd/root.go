@@ -19,7 +19,7 @@ var configFile string
 var pidFile string
 var logger zerolog.Logger
 
-// The Root CCobraorba Handler
+// The Root Cobra Handler
 var rootCmd = &cobra.Command{
 	Version: conf.Version,
 	Use:     conf.Executable,
