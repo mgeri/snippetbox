@@ -9,6 +9,7 @@ import (
 
 	"github.com/mgeri/snippetbox/conf"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -140,5 +141,8 @@ func initLog() {
 	}
 
 	logger = zerolog.New(logWriter).With().Timestamp().Logger()
+
+	// set global logger
+	log.Logger = logger
 
 }

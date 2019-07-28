@@ -1,8 +1,10 @@
 package server
 
 import (
+	"database/sql"
 	"net/http"
 
+	"github.com/mgeri/snippetbox/store/mysql"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
@@ -12,13 +14,29 @@ import (
 // we'll add more to it as the build progresses.
 type application struct {
 	logger *zerolog.Logger
+	db     *sql.DB
 }
 
+// ListenAndServe run Snippetbox server
 func ListenAndServe(logger *zerolog.Logger) {
+
+	var err error
+	var db *sql.DB
+
+	switch viper.GetString("storage.driver") {
+	case "mysql":
+		db, err = mysql.New(logger)
+	default:
+		db, err = mysql.New(logger)
+	}
+	if err != nil {
+		logger.Fatal().Msgf("Database Error %s", err)
+	}
 
 	// Initialize a new instance of application containing the dependencies.
 	app := &application{
 		logger: logger,
+		db:     db,
 	}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
@@ -31,7 +49,7 @@ func ListenAndServe(logger *zerolog.Logger) {
 	}
 
 	app.logger.Info().Msgf("Starting server on %s", viper.GetString("server.address"))
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		app.logger.Fatal().Err(err).Msg("Startup failed")
 	}
