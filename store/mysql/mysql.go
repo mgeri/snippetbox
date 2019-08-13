@@ -20,17 +20,17 @@ import (
 // New returns a new db pool from config
 func New(logger *zerolog.Logger) (*sql.DB, error) {
 
-	// Initialise a new connection pool
+	// Initialize a new connection pool
 	db, err := sql.Open(viper.GetString("storage.driver"), viper.GetString("storage.dsn"))
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not connect to database")
-		return nil, fmt.Errorf("Could not connect to database")
+		return nil, fmt.Errorf("could not connect to database")
 	}
 
 	// Ping the database
 	if err = db.Ping(); err != nil {
 		logger.Error().Err(err).Msg("Could not ping database")
-		return nil, fmt.Errorf("Could not ping database")
+		return nil, fmt.Errorf("could not ping database")
 	}
 
 	// Set the maximum number of concurrently open connections to 5. Setting this
@@ -52,40 +52,42 @@ func New(logger *zerolog.Logger) (*sql.DB, error) {
 	driver, err := mysql.WithInstance(db, &mysql.Config{})
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not start sql migration")
-		return nil, fmt.Errorf("Migration failed")
+		return nil, fmt.Errorf("migration failed")
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", viper.GetString("storage.migrationDir")), // file://path/to/directory
+		fmt.Sprintf("file://%s", viper.GetString("storage.migrationDir")),
 		"mysql", driver)
 
 	if err != nil {
 		logger.Error().Err(err).Msg("Migration init failed")
-		return nil, fmt.Errorf("Migration failed")
+		return nil, fmt.Errorf("migration failed")
 	}
 
 	// Do we wipe the database
 	if viper.GetBool("storage.wipe") {
 		err = m.Down()
-		if err == migrate.ErrNoChange {
-			// Okay
-		} else if err != nil {
+		switch {
+		case err == migrate.ErrNoChange:
+			logger.Warn().Msgf("Database Down schema current")
+		case err != nil:
 			logger.Error().Err(err).Msg("Migrate Database Down Error")
-			return nil, fmt.Errorf("Migration failed")
-		} else {
+			return nil, fmt.Errorf("migration failed")
+		default:
 			logger.Warn().Msgf("Database wipe completed")
 		}
 	}
 
 	// Perform the migration up
 	err = m.Up()
-	if err == migrate.ErrNoChange {
-		logger.Info().Msgf("Database schema current")
-	} else if err != nil {
+	switch {
+	case err == migrate.ErrNoChange:
+		logger.Warn().Msgf("Database Up schema current")
+	case err != nil:
 		logger.Error().Err(err).Msg("Migrate Database Up Error")
-		return nil, fmt.Errorf("Migration failed")
-	} else {
-		logger.Info().Msgf("Database migration completed")
+		return nil, fmt.Errorf("migration failed")
+	default:
+		logger.Warn().Msgf("Database migration completed")
 	}
 
 	return db, nil

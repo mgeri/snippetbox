@@ -19,7 +19,11 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	}
 
 	s, err := f.Stat()
-	if s.IsDir() {
+	if err != nil {
+		return nil, err
+	}
+
+	if s != nil && s.IsDir() {
 		index := strings.TrimSuffix(path, "/") + "/index.html"
 		if _, err := nfs.fs.Open(index); err != nil {
 			return nil, err

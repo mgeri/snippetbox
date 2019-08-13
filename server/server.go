@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/mgeri/snippetbox/store/mysql"
+
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
@@ -32,6 +33,8 @@ func ListenAndServe(logger *zerolog.Logger) {
 	if err != nil {
 		logger.Fatal().Msgf("Database Error %s", err)
 	}
+
+	defer db.Close()
 
 	// Initialize a new instance of application containing the dependencies.
 	app := &application{

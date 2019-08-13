@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/mgeri/snippetbox/conf"
+
 	"github.com/spf13/cobra"
 )
 
 // Version command
-func init() {
+func init() { // nolint: gochecknoinits
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "version",
 		Short: "Show version",

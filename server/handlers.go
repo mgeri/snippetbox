@@ -54,5 +54,8 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
 		return
 	}
-	w.Write([]byte("Create a new snippet..."))
+	_, err := w.Write([]byte("Create a new snippet..."))
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
