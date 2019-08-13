@@ -69,7 +69,7 @@ func New(logger *zerolog.Logger) (*sql.DB, error) {
 		err = m.Down()
 		switch {
 		case err == migrate.ErrNoChange:
-			logger.Warn().Msgf("Database Down schema current")
+			logger.Info().Msgf("Database Down schema current")
 		case err != nil:
 			logger.Error().Err(err).Msg("Migrate Database Down Error")
 			return nil, fmt.Errorf("migration failed")
@@ -82,7 +82,7 @@ func New(logger *zerolog.Logger) (*sql.DB, error) {
 	err = m.Up()
 	switch {
 	case err == migrate.ErrNoChange:
-		logger.Warn().Msgf("Database Up schema current")
+		logger.Info().Msgf("Database Up schema current")
 	case err != nil:
 		logger.Error().Err(err).Msg("Migrate Database Up Error")
 		return nil, fmt.Errorf("migration failed")

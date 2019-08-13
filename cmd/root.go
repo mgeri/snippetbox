@@ -93,8 +93,7 @@ func initConfig() {
 		viper.AddConfigPath("$HOME/." + conf.Executable)
 		err := viper.ReadInConfig()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not read config file: .%s ERROR: %s\n", conf.Executable, err.Error())
-			os.Exit(1)
+			fmt.Fprintf(os.Stdout, "Using default config values\n")
 		}
 	}
 
