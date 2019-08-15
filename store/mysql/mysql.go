@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/rs/zerolog"
 
 	// import mysql driver
@@ -18,19 +20,14 @@ import (
 )
 
 // New returns a new db pool from config
-func New(logger *zerolog.Logger) (*sql.DB, error) {
+func New(logger *zerolog.Logger) (*sqlx.DB, error) {
 
 	// Initialize a new connection pool
-	db, err := sql.Open(viper.GetString("storage.driver"), viper.GetString("storage.dsn"))
+	// note sqlx.Connect: Open connection and Ping database
+	db, err := sqlx.Connect("mysql", viper.GetString("storage.dsn"))
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not connect to database")
 		return nil, fmt.Errorf("could not connect to database")
-	}
-
-	// Ping the database
-	if err = db.Ping(); err != nil {
-		logger.Error().Err(err).Msg("Could not ping database")
-		return nil, fmt.Errorf("could not ping database")
 	}
 
 	// Set the maximum number of concurrently open connections to 5. Setting this
@@ -49,7 +46,15 @@ func New(logger *zerolog.Logger) (*sql.DB, error) {
 	}
 
 	// Run migrations
-	driver, err := mysql.WithInstance(db, &mysql.Config{})
+	dbMigrate, err := sql.Open("mysql", viper.GetString("storage.dsn"))
+	if err != nil {
+		logger.Error().Err(err).Msg("Could not connect to database for migration")
+		return nil, fmt.Errorf("could not connect to database for migration")
+	}
+
+	defer dbMigrate.Close()
+
+	driver, err := mysql.WithInstance(dbMigrate, &mysql.Config{})
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not start sql migration")
 		return nil, fmt.Errorf("migration failed")

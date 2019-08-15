@@ -1,9 +1,11 @@
 package server
 
 import (
-	"database/sql"
 	"net/http"
 
+	"github.com/jmoiron/sqlx"
+
+	"github.com/mgeri/snippetbox/store"
 	"github.com/mgeri/snippetbox/store/mysql"
 
 	"github.com/rs/zerolog"
@@ -14,21 +16,25 @@ import (
 // web application. For now we'll only include fields for the two custom loggers, but
 // we'll add more to it as the build progresses.
 type application struct {
-	logger *zerolog.Logger
-	db     *sql.DB
+	logger       *zerolog.Logger
+	db           *sqlx.DB
+	snippetStore store.SnippetStore
 }
 
 // ListenAndServe run Snippetbox server
 func ListenAndServe(logger *zerolog.Logger) {
 
 	var err error
-	var db *sql.DB
+	var db *sqlx.DB
+	var snippetStore store.SnippetStore
 
 	switch viper.GetString("storage.driver") {
 	case "mysql":
 		db, err = mysql.New(logger)
+		snippetStore = mysql.NewMysqlSnippetStore(logger, db)
 	default:
 		db, err = mysql.New(logger)
+		snippetStore = mysql.NewMysqlSnippetStore(logger, db)
 	}
 	if err != nil {
 		logger.Fatal().Msgf("Database Error %s", err)
@@ -37,10 +43,7 @@ func ListenAndServe(logger *zerolog.Logger) {
 	defer db.Close()
 
 	// Initialize a new instance of application containing the dependencies.
-	app := &application{
-		logger: logger,
-		db:     db,
-	}
+	app := &application{logger, db, snippetStore}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set
