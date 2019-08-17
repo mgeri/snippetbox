@@ -1,0 +1,21 @@
+{{template "base" .}}
+
+{{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
+
+{{define "body"}}
+    {{with .Snippet}}
+<div class='snippet'>
+    <div class='metadata'>
+        <strong>{{.Title}}</strong>
+        <span>#{{.ID}}</span>
+    </div>
+    <pre><code>{{.Content}}</code></pre>
+    
+    <div class='metadata'>
+        <!-- Use the new template function here -->
+        <time>Created: {{.Created | humanDate}}</time>
+        <time>Expires: {{.Expires | humanDate}}</time>
+    </div>
+</div>
+    {{end}}
+{{end}}

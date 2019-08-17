@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -16,9 +17,10 @@ import (
 // web application. For now we'll only include fields for the two custom loggers, but
 // we'll add more to it as the build progresses.
 type application struct {
-	logger       *zerolog.Logger
-	db           *sqlx.DB
-	snippetStore store.SnippetStore
+	logger        *zerolog.Logger
+	db            *sqlx.DB
+	snippetStore  store.SnippetStore
+	templateCache map[string]*template.Template
 }
 
 // ListenAndServe run Snippetbox server
@@ -42,8 +44,14 @@ func ListenAndServe(logger *zerolog.Logger) {
 
 	defer db.Close()
 
+	// Initialize a new template cache...
+	templateCache, err := newTemplateCache("./ui/html/")
+	if err != nil {
+		logger.Fatal().Msgf("Template cache Error %s", err)
+	}
+
 	// Initialize a new instance of application containing the dependencies.
-	app := &application{logger, db, snippetStore}
+	app := &application{logger, db, snippetStore, templateCache}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set
