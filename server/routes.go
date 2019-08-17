@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/justinas/alice"
 	"github.com/spf13/viper"
 )
 
@@ -33,7 +34,11 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	return f, nil
 }
 
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
+
+	// Create a middleware chain containing our 'standard' middleware
+	// which will be used for every request our application receives.
+	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.home)
@@ -43,5 +48,11 @@ func (app *application) routes() *http.ServeMux {
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir(viper.GetString("server.staticDir"))})
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	return mux
+	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
+	// Because secureHeaders is just a function, and the function returns a
+	// http.Handler we don't need to do anything else.
+	// return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+
+	// Use alice chain
+	return standardMiddleware.Then(mux)
 }
