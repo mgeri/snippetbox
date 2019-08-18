@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bmizerany/pat"
 	"github.com/justinas/alice"
 	"github.com/spf13/viper"
 )
@@ -40,13 +41,21 @@ func (app *application) routes() http.Handler {
 	// which will be used for every request our application receives.
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet", app.showSnippet)
-	mux.HandleFunc("/snippet/create", app.createSnippet)
-
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir(viper.GetString("server.staticDir"))})
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+
+	mux := pat.New()
+
+	// mux := http.NewServeMux()
+	// mux.HandleFunc("/", app.home)
+	// mux.HandleFunc("/snippet", app.showSnippet)
+	// mux.HandleFunc("/snippet/create", app.createSnippet)
+	// mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+
+	mux.Get("/", http.HandlerFunc(app.home))
+	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
+	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet)) // Moved down
+	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
 	// Because secureHeaders is just a function, and the function returns a
