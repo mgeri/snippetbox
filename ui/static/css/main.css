@@ -15,7 +15,7 @@ body {
     background-color: #F1F3F6;
     color: #34495E;
     overflow: hidden;
-/*    overflow-y: scroll;*/
+    overflow-y: scroll;
 }
 
 header, nav, section, footer {
