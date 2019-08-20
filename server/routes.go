@@ -36,25 +36,25 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 }
 
 func (app *application) routes() http.Handler {
-
 	// Create a middleware chain containing our 'standard' middleware
 	// which will be used for every request our application receives.
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir(viper.GetString("server.staticDir"))})
 
+	// Create a new middleware chain containing the middleware specific to
+	// our dynamic application routes. For now, this chain will only contain
+	// the session middleware but we'll add more to it later.
+	dynamicMiddleware := alice.New(app.session.Enable)
+
 	mux := pat.New()
+	// Update these routes to use the new dynamic middleware chain followed
+	// by the appropriate handler function.
+	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
+	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("/", app.home)
-	// mux.HandleFunc("/snippet", app.showSnippet)
-	// mux.HandleFunc("/snippet/create", app.createSnippet)
-	// mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
-	mux.Get("/", http.HandlerFunc(app.home))
-	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
-	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
-	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet)) // Moved down
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
@@ -62,6 +62,6 @@ func (app *application) routes() http.Handler {
 	// http.Handler we don't need to do anything else.
 	// return app.recoverPanic(app.logRequest(secureHeaders(mux)))
 
-	// Use alice chain
+	// Use alice chain instead
 	return standardMiddleware.Then(mux)
 }

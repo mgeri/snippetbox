@@ -19,6 +19,9 @@ var (
 		viper.SetDefault("server.address", ":4000")
 		viper.SetDefault("server.staticDir", "./ui/static/")
 
+		// Session secret
+		viper.SetDefault("session.secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge")
+
 		// Database Settings
 		viper.SetDefault("storage.driver", "mysql")
 		viper.SetDefault("storage.dsn",

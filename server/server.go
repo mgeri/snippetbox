@@ -3,12 +3,14 @@ package server
 import (
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
 	"github.com/mgeri/snippetbox/store"
 	"github.com/mgeri/snippetbox/store/mysql"
 
+	"github.com/golangcollege/sessions"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
@@ -19,6 +21,7 @@ import (
 type application struct {
 	logger        *zerolog.Logger
 	db            *sqlx.DB
+	session       *sessions.Session
 	snippetStore  store.SnippetStore
 	templateCache map[string]*template.Template
 }
@@ -44,6 +47,12 @@ func ListenAndServe(logger *zerolog.Logger) {
 
 	defer db.Close()
 
+	// Use the sessions.New() function to initialize a new session manager,
+	// passing in the secret key as the parameter. Then we configure it so
+	// sessions always expires after 12 hours.
+	session := sessions.New([]byte(viper.GetString("session.secret")))
+	session.Lifetime = 12 * time.Hour
+
 	// Initialize a new template cache...
 	templateCache, err := newTemplateCache("./ui/html/")
 	if err != nil {
@@ -51,7 +60,7 @@ func ListenAndServe(logger *zerolog.Logger) {
 	}
 
 	// Initialize a new instance of application containing the dependencies.
-	app := &application{logger, db, snippetStore, templateCache}
+	app := &application{logger, db, session, snippetStore, templateCache}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set
