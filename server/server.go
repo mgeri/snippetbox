@@ -22,8 +22,9 @@ type application struct {
 	logger        *zerolog.Logger
 	db            *sqlx.DB
 	session       *sessions.Session
-	snippetStore  store.SnippetStore
 	templateCache map[string]*template.Template
+	snippetStore  store.SnippetStore
+	userStore     store.UserStore
 }
 
 // ListenAndServe run Snippetbox server
@@ -32,14 +33,15 @@ func ListenAndServe(logger *zerolog.Logger) {
 	var err error
 	var db *sqlx.DB
 	var snippetStore store.SnippetStore
+	var userStore store.UserStore
 
 	switch viper.GetString("storage.driver") {
 	case "mysql":
-		db, err = mysql.New(logger)
-		snippetStore = mysql.NewMysqlSnippetStore(logger, db)
+		fallthrough
 	default:
 		db, err = mysql.New(logger)
 		snippetStore = mysql.NewMysqlSnippetStore(logger, db)
+		userStore = mysql.NewMysqlUserStore(logger, db)
 	}
 	if err != nil {
 		logger.Fatal().Msgf("Database Error %s", err)
@@ -52,6 +54,7 @@ func ListenAndServe(logger *zerolog.Logger) {
 	// sessions always expires after 12 hours.
 	session := sessions.New([]byte(viper.GetString("session.secret")))
 	session.Lifetime = 12 * time.Hour
+	session.SameSite = http.SameSiteStrictMode
 
 	// Initialize a new template cache...
 	templateCache, err := newTemplateCache("./ui/html/")
@@ -60,7 +63,7 @@ func ListenAndServe(logger *zerolog.Logger) {
 	}
 
 	// Initialize a new instance of application containing the dependencies.
-	app := &application{logger, db, session, snippetStore, templateCache}
+	app := &application{logger, db, session, templateCache, snippetStore, userStore}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set

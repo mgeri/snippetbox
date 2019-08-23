@@ -1,0 +1,35 @@
+{{template "base" .}}
+
+{{define "title"}}Signup{{end}}
+
+{{define "body"}}
+<form action='/user/signup' method='POST' novalidate>
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+    {{with .Form}}
+        <div>
+            <label>Name:</label>
+            {{with .Errors.Get "name"}}
+                <label class='error'>{{.}}</label>
+            {{end}}
+            <input type='text' name='name' value='{{.Get "name"}}'>
+        </div>
+        <div>
+            <label>Email:</label>
+            {{with .Errors.Get "email"}}
+                <label class='error'>{{.}}</label>
+            {{end}}
+            <input type='email' name='email' value='{{.Get "email"}}'>
+        </div>
+        <div>
+            <label>Password:</label>
+            {{with .Errors.Get "password"}}
+                <label class='error'>{{.}}</label>
+                {{end}}
+            <input type='password' name='password'>
+        </div>
+        <div>
+            <input type='submit' value='Signup'>
+        </div>
+    {{end}}
+</form>
+{{end}}

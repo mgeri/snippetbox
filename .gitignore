@@ -46,6 +46,9 @@
 ### Idea ###
 .idea/*
 
+### TLS Certificates and keys ###
+tls/
+
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
@@ -55,4 +58,4 @@
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 
 ### Local binary ###
-/bin/
+bin/
