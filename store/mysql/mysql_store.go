@@ -219,5 +219,15 @@ func (m *mysqlUserStore) Authenticate(email, password string) (int, error) {
 // We'll use the Get method to fetch details for a specific user based
 // on their user ID.
 func (m *mysqlUserStore) Get(id int) (*models.User, error) {
-	return nil, nil
+	u := &models.User{}
+
+	stmt := `SELECT id, name, email, created, active FROM users WHERE id = ?`
+	err := m.db.QueryRow(stmt, id).Scan(&u.ID, &u.Name, &u.Email, &u.Created, &u.Active)
+	if err == sql.ErrNoRows {
+		return nil, models.ErrNoRecord
+	} else if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
