@@ -64,6 +64,9 @@ func (app *application) routes() http.Handler {
 	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
 	mux.Post("/user/logout", dynamicAuthMiddleware.ThenFunc(app.logoutUser))
 
+	// Ping for status-checking or uptime monitoring of your server
+	mux.Get("/ping", dynamicMiddleware.ThenFunc(app.ping))
+
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
