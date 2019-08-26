@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"testing"
@@ -30,16 +31,16 @@ func Test_application_ping(t *testing.T) {
 	defer ts.Close()
 
 	tests := []struct {
-		name       string
-		urlPath    string
-		wantResult int
-		wantBody   string
+		name     string
+		urlPath  string
+		wantCode int
+		wantBody []byte
 	}{
 		{
-			name:       "OK",
-			urlPath:    "/ping",
-			wantResult: http.StatusOK,
-			wantBody:   "OK",
+			name:     "OK",
+			urlPath:  "/ping",
+			wantCode: http.StatusOK,
+			wantBody: []byte("OK"),
 		},
 	}
 	for _, tt := range tests {
@@ -49,18 +50,56 @@ func Test_application_ping(t *testing.T) {
 			// in the ts.URL field. We can use this along with the ts.Client().Get()
 			// method to make a GET /ping request against the test server. This
 			// returns a http.Response struct containing the response.
-			code, _, body := ts.get(t, tt.urlPath, tt.wantBody != "")
+			code, _, body := ts.get(t, tt.urlPath, tt.wantBody != nil)
 
 			// We can then examine the http.Response to check that the status code
 			// written by the ping handler was 200.
-			if code != tt.wantResult {
-				t.Errorf("want %d; got %d", tt.wantResult, code)
+			if code != tt.wantCode {
+				t.Errorf("want %d; got %d", tt.wantCode, code)
 			}
 
-			if tt.wantBody != "" {
-				if string(body) != tt.wantBody {
-					t.Errorf("want body to equal %q", "OK")
-				}
+			if tt.wantBody != nil && !bytes.Contains(body, tt.wantBody) {
+				t.Errorf("want body to contain %q", tt.wantBody)
+			}
+		})
+	}
+}
+
+func Test_application_showSnippet(t *testing.T) {
+	// Create a new instance of our application struct which uses the mocked
+	// dependencies.
+	app := newTestApplication(t)
+	// Establish a new test server for running end-to-end tests.
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	// Set up some table-driven tests to check the responses sent by our
+	// application for different URLs.
+	tests := []struct {
+		name     string
+		urlPath  string
+		wantCode int
+		wantBody []byte
+	}{
+		{"Valid ID", "/snippet/1", http.StatusOK, []byte("An old silent pond...")},
+		{"Non-existent ID", "/snippet/2", http.StatusNotFound, nil},
+		{"Negative ID", "/snippet/-1", http.StatusNotFound, nil},
+		{"Decimal ID", "/snippet/1.23", http.StatusNotFound, nil},
+		{"String ID", "/snippet/foo", http.StatusNotFound, nil},
+		{"Empty ID", "/snippet/", http.StatusNotFound, nil},
+		{"Trailing slash", "/snippet/1/", http.StatusNotFound, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, _, body := ts.get(t, tt.urlPath, tt.wantBody != nil)
+
+			if code != tt.wantCode {
+				t.Errorf("want %d; got %d", tt.wantCode, code)
+			}
+
+			if tt.wantBody != nil && !bytes.Contains(body, tt.wantBody) {
+				t.Errorf("want body to contain %q", tt.wantBody)
 			}
 		})
 	}
