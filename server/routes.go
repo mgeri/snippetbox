@@ -65,7 +65,7 @@ func (app *application) routes() http.Handler {
 	mux.Post("/user/logout", dynamicAuthMiddleware.ThenFunc(app.logoutUser))
 
 	// Ping for status-checking or uptime monitoring of your server
-	mux.Get("/ping", dynamicMiddleware.ThenFunc(app.ping))
+	mux.Get("/ping", http.HandlerFunc(app.ping))
 
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
