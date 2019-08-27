@@ -1,10 +1,13 @@
 package server
 
 import (
+	"html"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -13,6 +16,29 @@ import (
 
 	"github.com/mgeri/snippetbox/store/mock"
 )
+
+// Define a custom testServer type which anonymously embeds a httptest.Server
+// instance.
+type testServer struct {
+	*httptest.Server
+}
+
+// Define a regular expression which captures the CSRF token value from the
+// HTML for our user signup page.
+var csrfTokenRX = regexp.MustCompile(`<input type='hidden' name='csrf_token' value='(.+)'>`)
+
+func extractCSRFToken(t *testing.T, body []byte) string {
+	// Use the FindSubmatch method to extract the token from the HTML body.
+	// Note that this returns an array with the entire matched pattern in the
+	// first position, and the values of any captured data in the subsequent
+	// positions.
+	matches := csrfTokenRX.FindSubmatch(body)
+	if len(matches) < 2 {
+		t.Fatal("no csrf token found in body")
+	}
+
+	return html.UnescapeString(string(matches[1]))
+}
 
 // Create a newTestApplication helper which returns an instance of our
 // application struct containing mocked dependencies.
@@ -40,12 +66,6 @@ func newTestApplication(t *testing.T) *application {
 		templateCache: templateCache,
 		userStore:     &mock.UserStore{},
 	}
-}
-
-// Define a custom testServer type which anonymously embeds a httptest.Server
-// instance.
-type testServer struct {
-	*httptest.Server
 }
 
 // Create a newTestServer helper which initalizes and returns a new instance
@@ -93,5 +113,29 @@ func (ts *testServer) get(t *testing.T, urlPath string, wantBody bool) (int, htt
 		return rs.StatusCode, rs.Header, body
 	}
 
+	return rs.StatusCode, rs.Header, nil
+}
+
+// Create a postForm method for sending POST requests to the test server.
+// The final parameter to this method is a url.Values object which can contain
+// any data that you want to send in the request body.
+func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values, wantBody bool) (int, http.Header, []byte) {
+	rs, err := ts.Client().PostForm(ts.URL+urlPath, form)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Read the response body.
+	defer rs.Body.Close()
+	if wantBody {
+		body, err := ioutil.ReadAll(rs.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Return the response status, headers and body.
+		return rs.StatusCode, rs.Header, body
+	}
+
+	// Return the response status, headers.
 	return rs.StatusCode, rs.Header, nil
 }
