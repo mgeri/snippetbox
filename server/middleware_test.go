@@ -11,7 +11,7 @@ func Test_secureHeaders(t *testing.T) {
 	// Initialize a new httptest.ResponseRecorder and dummy http.Request.
 	rr := httptest.NewRecorder()
 
-	r, err := http.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest(http.MethodGet, "/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
