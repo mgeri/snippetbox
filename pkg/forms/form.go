@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 )
 
-// Use the regexp.MustCompile() function to parse a pattern and compile a
+// EmailRX Use the regexp.MustCompile() function to parse a pattern and compile a
 // regular expression for sanity checking the format of an email address.
 // This returns a *regexp.Regexp object, or panics in the event of an error.
 // Doing this once at runtime, and storing the compiled regular expression
